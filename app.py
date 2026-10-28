@@ -1,19 +1,19 @@
-# =====================================================================
-# app.py - Flask Web Application Controller
-# Advanced Database System (ADS) Mini-Project: Library Management System
-# =====================================================================
+
 
 from flask import Flask, render_template, request, redirect, url_for, flash
 from config import Config
 from db import execute_query, call_procedure
 import os
 
-app = Flask(__name__)
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, 'templates'),
+    static_folder=os.path.join(BASE_DIR, 'static')
+)
 app.config.from_object(Config)
 
-# =====================================================================
-# 1. Dashboard Route (Overview & Analytics)
-# =====================================================================
+
 @app.route('/')
 @app.route('/dashboard')
 def dashboard():
@@ -549,5 +549,5 @@ def internal_server_error(e):
     return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
-    # Running locally in debug mode on port 5000
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
