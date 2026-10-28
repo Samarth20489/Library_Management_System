@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports & ADS Analytics - LibraryMS{% endblock %}
+{% block header_title %}Reports & Advanced SQL Analytics{% endblock %}
+{% block header_subtitle %}Demonstrating Views, Aggregations, Joins, Having, Subqueries, and Trigger Auditing{% endblock %}
+
+{% block content %}
+<!-- Navigation Tabs for ADS Reports -->
+<ul class="nav nav-pills mb-4 gap-2 bg-white p-2 rounded border" id="reportTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active d-flex align-items-center gap-2" id="tab-overdue-btn" data-bs-toggle="pill" data-bs-target="#tab-overdue" type="button" role="tab">
+            <i class="bi bi-exclamation-octagon-fill text-danger"></i>
+            <span>Overdue Report (View)</span>
+            <span class="badge bg-danger rounded-pill">{{ overdue_books|length }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link d-flex align-items-center gap-2" id="tab-active-btn" data-bs-toggle="pill" data-bs-target="#tab-active" type="button" role="tab">
+            <i class="bi bi-clock-history text-primary"></i>
+            <span>Active Issues (View)</span>
+            <span class="badge bg-primary rounded-pill">{{ active_issues|length }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link d-flex align-items-center gap-2" id="tab-student-summary-btn" data-bs-toggle="pill" data-bs-target="#tab-student-summary" type="button" role="tab">
+            <i class="bi bi-person-lines-fill text-info"></i>
+            <span>Student Borrowing Summary (Aggregates)</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link d-flex align-items-center gap-2" id="tab-dept-btn" data-bs-toggle="pill" data-bs-target="#tab-dept" type="button" role="tab">
+            <i class="bi bi-diagram-3-fill text-warning"></i>
+            <span>Department Analytics (GROUP BY & HAVING)</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link d-flex align-items-center gap-2" id="tab-audit-btn" data-bs-toggle="pill" data-bs-target="#tab-audit" type="button" role="tab">
+            <i class="bi bi-shield-check text-success"></i>
+            <span>Trigger Audit Log</span>
+            <span class="badge bg-success rounded-pill">{{ audit_logs|length }}</span>
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="reportTabsContent">
+
+    <!-- TAB 1: Overdue Books (View) -->
+    <div class="tab-pane fade show active" id="tab-overdue" role="tabpanel">
+        <div class="custom-card">
+            <div class="custom-card-header bg-danger bg-opacity-10">
+                <h2 class="custom-card-title text-danger">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    Overdue Books Report
+                </h2>
+                <div class="badge bg-danger rounded-pill py-2 px-3">
+                    Underlying Object: Database View <code>vw_overdue_books</code>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>Issue ID</th>
+                            <th>Student Name</th>
+                            <th>Department</th>
+                            <th>Book Title</th>
+                            <th>Issue Date</th>
+                            <th>Due Date</th>
+                            <th>Days Late</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if overdue_books %}
+                            {% for row in overdue_books %}
+                                <tr>
+                                    <td><span class="mono-code">#{{ row.issue_id }}</span></td>
+                                    <td>
+                                        <div class="fw-bold">{{ row.student_name }}</div>
+                                        <small class="text-muted">{{ row.student_email }}</small>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">{{ row.department }}</span></td>
+                                    <td>
+                                        <div class="fw-bold">{{ row.book_title }}</div>
+                                        <small class="text-muted">{{ row.book_author }}</small>
+                                    </td>
+                                    <td>{{ row.issue_date }}</td>
+                                    <td class="text-danger fw-semibold">{{ row.due_date }}</td>
+                                    <td>
+                                        <span class="badge-pill badge-overdue">
+                                            +{{ row.overdue_days }} days late
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{{ url_for('return_book_action', issue_id=row.issue_id) }}" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-box-arrow-in-down"></i> Return
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">
+                                    <i class="bi bi-check2-circle text-success fs-2 d-block"></i>
+                                    No overdue books currently recorded.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- SQL Viva Snippet -->
+            <div class="p-3 bg-light border-top">
+                <small class="text-muted fw-bold d-block mb-1">SQL Query Executed (Viva Explanation):</small>
+                <code class="text-dark small">SELECT * FROM vw_overdue_books ORDER BY overdue_days DESC;</code>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: Active Issues (View) -->
+    <div class="tab-pane fade" id="tab-active" role="tabpanel">
+        <div class="custom-card">
+            <div class="custom-card-header">
+                <h2 class="custom-card-title">
+                    <i class="bi bi-journal-arrow-up text-primary"></i>
+                    All Currently Active Book Issues
+                </h2>
+                <div class="badge bg-light text-dark border py-2 px-3">
+                    Underlying Object: Database View <code>vw_active_issues</code>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>Issue ID</th>
+                            <th>Student</th>
+                            <th>Book Title</th>
+                            <th>Issue Date</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in active_issues %}
+                            <tr>
+                                <td><span class="mono-code">#{{ row.issue_id }}</span></td>
+                                <td>
+                                    <strong>{{ row.student_name }}</strong>
+                                    <div class="small text-muted">{{ row.department }}</div>
+                                </td>
+                                <td>
+                                    <strong>{{ row.book_title }}</strong>
+                                    <div class="small text-muted">{{ row.book_author }}</div>
+                                </td>
+                                <td>{{ row.issue_date }}</td>
+                                <td>{{ row.due_date }}</td>
+                                <td>
+                                    {% if row.issue_status == 'OVERDUE' %}
+                                        <span class="badge-pill badge-overdue">Overdue ({{ row.overdue_days }}d)</span>
+                                    {% else %}
+                                        <span class="badge-pill badge-active">Active</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ url_for('return_book_action', issue_id=row.issue_id) }}" class="btn btn-sm btn-outline-success">
+                                        Return
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: Student Borrowing Summary (Aggregations) -->
+    <div class="tab-pane fade" id="tab-student-summary" role="tabpanel">
+        <div class="custom-card">
+            <div class="custom-card-header">
+                <h2 class="custom-card-title">
+                    <i class="bi bi-people-fill text-info"></i>
+                    Student Borrowing Profiles (SQL Aggregations)
+                </h2>
+                <div class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 py-2 px-3">
+                    Concepts: <code>LEFT JOIN</code>, <code>COUNT()</code>, <code>SUM(CASE WHEN)</code>, <code>GROUP BY</code>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Student Name</th>
+                            <th>Department</th>
+                            <th class="text-center">Total Lifetime Loans</th>
+                            <th class="text-center">Currently Borrowed</th>
+                            <th class="text-center">Successfully Returned</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in student_summary %}
+                            <tr>
+                                <td><span class="mono-code">#{{ row.student_id }}</span></td>
+                                <td><strong>{{ row.student_name }}</strong></td>
+                                <td><span class="badge bg-light text-dark border">{{ row.department }}</span></td>
+                                <td class="text-center fw-bold">{{ row.total_borrowed }}</td>
+                                <td class="text-center">
+                                    {% if row.currently_issued > 0 %}
+                                        <span class="badge bg-warning bg-opacity-25 text-dark px-2 py-1 rounded-pill">
+                                            {{ row.currently_issued }} Active
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">0</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center text-success fw-bold">{{ row.total_returned }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: Department Analytics (GROUP BY & HAVING) -->
+    <div class="tab-pane fade" id="tab-dept" role="tabpanel">
+        <div class="custom-card">
+            <div class="custom-card-header">
+                <h2 class="custom-card-title">
+                    <i class="bi bi-pie-chart-fill text-warning"></i>
+                    Department Borrowing Statistics (GROUP BY & HAVING)
+                </h2>
+                <div class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 py-2 px-3">
+                    Concepts: Multi-table <code>JOIN</code>, <code>GROUP BY</code>, <code>HAVING COUNT(*) >= 1</code>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>Department</th>
+                            <th class="text-center">Registered Students</th>
+                            <th class="text-center">Total Books Borrowed</th>
+                            <th class="text-center">Currently Active Loans</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in dept_stats %}
+                            <tr>
+                                <td><strong>{{ row.department }}</strong></td>
+                                <td class="text-center">{{ row.student_count }}</td>
+                                <td class="text-center fw-bold text-primary">{{ row.total_loans }}</td>
+                                <td class="text-center fw-bold text-warning">{{ row.active_loans }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- SQL Viva Snippet -->
+            <div class="p-3 bg-light border-top">
+                <small class="text-muted fw-bold d-block mb-1">SQL Query Executed (Viva Explanation):</small>
+                <code class="text-dark small">
+                    SELECT s.department, COUNT(DISTINCT s.student_id) AS student_count, COUNT(bi.issue_id) AS total_loans, SUM(CASE WHEN bi.return_date IS NULL THEN 1 ELSE 0 END) AS active_loans FROM Students s LEFT JOIN Book_Issues bi ON s.student_id = bi.student_id GROUP BY s.department HAVING COUNT(DISTINCT s.student_id) >= 1 ORDER BY total_loans DESC;
+                </code>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: Trigger Audit Trail -->
+    <div class="tab-pane fade" id="tab-audit" role="tabpanel">
+        <div class="custom-card">
+            <div class="custom-card-header bg-success bg-opacity-10">
+                <h2 class="custom-card-title text-success">
+                    <i class="bi bi-shield-shaded"></i>
+                    Database Trigger Audit Log (`Issue_Audit_Log`)
+                </h2>
+                <div class="badge bg-success rounded-pill py-2 px-3">
+                    Populated by Triggers: <code>trg_after_issue_insert</code> & <code>trg_after_issue_update</code>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>Log ID</th>
+                            <th>Issue ID</th>
+                            <th>Student</th>
+                            <th>Book ID</th>
+                            <th>Action Type</th>
+                            <th>Action Details</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if audit_logs %}
+                            {% for log in audit_logs %}
+                                <tr>
+                                    <td><span class="mono-code">#{{ log.log_id }}</span></td>
+                                    <td>#{{ log.issue_id }}</td>
+                                    <td>Student #{{ log.student_id }}</td>
+                                    <td>Book #{{ log.book_id }}</td>
+                                    <td>
+                                        {% if log.action_type == 'ISSUED' %}
+                                            <span class="badge-pill badge-active">ISSUED</span>
+                                        {% else %}
+                                            <span class="badge-pill badge-returned">RETURNED</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ log.action_details }}</td>
+                                    <td class="small text-muted">{{ log.log_timestamp }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">
+                                    No audit logs found.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

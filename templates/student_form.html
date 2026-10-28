@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Edit Student' if student else 'Register Student' }} - LibraryMS{% endblock %}
+{% block header_title %}{{ 'Edit Student Profile' if student else 'Register New Student' }}{% endblock %}
+{% block header_subtitle %}{{ 'Update student personal and academic information' if student else 'Add a new member to the library circulation system' }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="custom-card">
+            <div class="custom-card-header">
+                <h2 class="custom-card-title">
+                    <i class="bi bi-{{ 'person-gear' if student else 'person-plus' }} text-primary"></i>
+                    {{ 'Update Student #' ~ student.student_id if student else 'Student Registration Form' }}
+                </h2>
+                <a href="{{ url_for('students') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Directory
+                </a>
+            </div>
+            <div class="custom-card-body p-4">
+                <form method="POST" action="{{ url_for('edit_student', student_id=student.student_id) if student else url_for('add_student') }}" novalidate>
+                    <!-- Full Name -->
+                    <div class="mb-3">
+                        <label for="name" class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               placeholder="e.g. Aarav Sharma" 
+                               value="{{ student.name if student else '' }}" required autofocus>
+                        <div class="form-text">Student's registered official full name.</div>
+                    </div>
+
+                    <!-- Department -->
+                    <div class="mb-3">
+                        <label for="department" class="form-label fw-semibold">Department <span class="text-danger">*</span></label>
+                        <select class="form-select" id="department" name="department" required>
+                            <option value="" disabled {% if not student %}selected{% endif %}>Select department...</option>
+                            <option value="Computer Science & Engineering" {% if student and student.department == 'Computer Science & Engineering' %}selected{% endif %}>Computer Science & Engineering (CSE)</option>
+                            <option value="Information Technology" {% if student and student.department == 'Information Technology' %}selected{% endif %}>Information Technology (IT)</option>
+                            <option value="Electronics & Communication" {% if student and student.department == 'Electronics & Communication' %}selected{% endif %}>Electronics & Communication (ECE)</option>
+                            <option value="Mechanical Engineering" {% if student and student.department == 'Mechanical Engineering' %}selected{% endif %}>Mechanical Engineering (ME)</option>
+                            <option value="Civil Engineering" {% if student and student.department == 'Civil Engineering' %}selected{% endif %}>Civil Engineering (CE)</option>
+                            <option value="Electrical Engineering" {% if student and student.department == 'Electrical Engineering' %}selected{% endif %}>Electrical Engineering (EE)</option>
+                            <option value="Artificial Intelligence & Data Science" {% if student and student.department == 'Artificial Intelligence & Data Science' %}selected{% endif %}>Artificial Intelligence & Data Science (AI & DS)</option>
+                        </select>
+                    </div>
+
+                    <!-- Email Address (Unique) -->
+                    <div class="mb-3">
+                        <label for="email" class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="email" name="email" 
+                               placeholder="e.g. student.name@college.edu" 
+                               value="{{ student.email if student else '' }}" required>
+                        <div class="form-text">
+                            <i class="bi bi-shield-check text-success"></i> 
+                            Must be unique in database (enforced by <code>UNIQUE(email)</code> constraint).
+                        </div>
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div class="mb-4">
+                        <label for="phone" class="form-label fw-semibold">Phone / Mobile Number</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" 
+                               placeholder="e.g. +91 98765 43210" 
+                               value="{{ student.phone if student and student.phone else '' }}">
+                        <div class="form-text">Contact number for overdue notices and library SMS alerts.</div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+                        <a href="{{ url_for('students') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary-custom px-4">
+                            <i class="bi bi-check2-circle"></i>
+                            {{ 'Update Profile' if student else 'Register Student' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

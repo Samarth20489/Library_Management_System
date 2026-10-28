@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Edit Book' if book else 'Add New Book' }} - LibraryMS{% endblock %}
+{% block header_title %}{{ 'Edit Book Details' if book else 'Add New Book' }}{% endblock %}
+{% block header_subtitle %}{{ 'Update catalog information and inventory quantities' if book else 'Register a new textbook title into the library database' }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="custom-card">
+            <div class="custom-card-header">
+                <h2 class="custom-card-title">
+                    <i class="bi bi-{{ 'pencil-square' if book else 'journal-plus' }} text-primary"></i>
+                    {{ 'Update Book #' ~ book.book_id if book else 'Book Information Form' }}
+                </h2>
+                <a href="{{ url_for('books') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Catalog
+                </a>
+            </div>
+            <div class="custom-card-body p-4">
+                <form method="POST" action="{{ url_for('edit_book', book_id=book.book_id) if book else url_for('add_book') }}" novalidate>
+                    <!-- Title Field -->
+                    <div class="mb-3">
+                        <label for="title" class="form-label fw-semibold">Book Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="title" name="title" 
+                               placeholder="e.g. Database System Concepts" 
+                               value="{{ book.title if book else '' }}" required autofocus>
+                        <div class="form-text">Enter the full publication title.</div>
+                    </div>
+
+                    <!-- Author Field -->
+                    <div class="mb-3">
+                        <label for="author" class="form-label fw-semibold">Author(s) <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="author" name="author" 
+                               placeholder="e.g. Abraham Silberschatz, Henry F. Korth" 
+                               value="{{ book.author if book else '' }}" required>
+                        <div class="form-text">Primary author or co-authors.</div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <!-- Category Field -->
+                        <div class="col-md-6">
+                            <label for="category" class="form-label fw-semibold">Category / Subject</label>
+                            <input type="text" class="form-control" id="category" name="category" 
+                                   placeholder="e.g. Computer Science, Database, AI" 
+                                   value="{{ book.category if book else 'General' }}">
+                        </div>
+
+                        <!-- ISBN Field -->
+                        <div class="col-md-6">
+                            <label for="isbn" class="form-label fw-semibold">ISBN Number</label>
+                            <input type="text" class="form-control" id="isbn" name="isbn" 
+                                   placeholder="e.g. 978-0078022159" 
+                                   value="{{ book.isbn if book else '' }}">
+                        </div>
+                    </div>
+
+                    <!-- Total Copies Field with Constraint Note -->
+                    <div class="mb-4">
+                        <label for="total_copies" class="form-label fw-semibold">
+                            Total Copies in Stock <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" class="form-control" id="total_copies" name="total_copies" 
+                               min="{{ (book.total_copies - book.available_copies) if book else 1 }}" 
+                               value="{{ book.total_copies if book else 1 }}" required>
+                        
+                        {% if book %}
+                            {% set currently_issued = book.total_copies - book.available_copies %}
+                            <div class="alert alert-info mt-2 py-2 px-3 small d-flex align-items-center gap-2 mb-0">
+                                <i class="bi bi-info-circle-fill fs-5 text-info"></i>
+                                <div>
+                                    <strong>Inventory Constraint:</strong> Currently <strong>{{ currently_issued }}</strong> copies are borrowed. 
+                                    Total copies cannot be reduced below <strong>{{ currently_issued }}</strong>.
+                                    Available copies will automatically adjust.
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="form-text">Number of physical copies to add to stock. Available copies will match this initial count.</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+                        <a href="{{ url_for('books') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary-custom px-4">
+                            <i class="bi bi-check2-circle"></i>
+                            {{ 'Update Book' if book else 'Save Book' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

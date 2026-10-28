@@ -1,0 +1,10 @@
+# =====================================================================
+# Library Management System - Python Dependencies
+# Tech Stack: Flask, MySQL Connector, Python-Dotenv
+# =====================================================================
+
+Flask>=3.0.0
+mysql-connector-python>=8.0.33
+python-dotenv>=1.0.0
+Werkzeug>=3.0.0
+gunicorn>=21.2.0
